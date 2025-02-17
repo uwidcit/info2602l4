@@ -133,7 +133,7 @@ class RegularUser(User):
     todo = Todo.query.filter_by(id=todo_id, user_id=self.id).first()
     if todo:
       todo.toggle()
-      return True
+      return todo
     return None
 
   def add_todo_category(self, todo_id, category_text):
