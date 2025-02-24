@@ -119,9 +119,77 @@ def edit_todo_page(id):
 
 # Action Routes
 
+@app.route('/signup', methods=['POST'])
+def signup_action():
+  data = request.form  # get data from form submission
+  newuser = RegularUser(username=data['username'], email=data['email'], password=data['password'])  # create user object
+  response = None
+  try:
+    db.session.add(newuser)
+    db.session.commit()  # save user
+    token = login_user(data['username'], data['password'])
+    response = redirect(url_for('todos_page'))
+    set_access_cookies(response, token)
+    flash('Account Created!')  # send message
+  except Exception:  # attempted to insert a duplicate user
+    db.session.rollback()
+    flash("username or email already exists")  # error message
+    response = redirect(url_for('login_page'))
+  return response
 
+@app.route('/login', methods=['POST'])
+def login_action():
+  data = request.form
+  token = login_user(data['username'], data['password'])
+  response = None
+  if token:
+    flash('Logged in successfully.')  # send message to next page
+    response = redirect(
+        url_for('todos_page'))  # redirect to main page if login successful
+    set_access_cookies(response, token)
+  else:
+    flash('Invalid username or password')  # send message to next page
+    response = redirect(url_for('login_page'))
+  return response
 
+@app.route('/createTodo', methods=['POST'])
+@jwt_required()
+def create_todo_action():
+  data = request.form
+  current_user.add_todo(data['text'])
+  flash('Created')
+  return redirect(url_for('todos_page'))
 
+@app.route('/toggle/<id>', methods=['POST'])
+@jwt_required()
+def toggle_todo_action(id):
+  todo = current_user.toggle_todo(id)
+  if todo is None:
+    flash('Invalid id or unauthorized')
+  else:
+    flash(f'Todo { "done" if todo.done else "not done" }!')
+  return redirect(url_for('todos_page'))
+
+@app.route('/editTodo/<id>', methods=["POST"])
+@jwt_required()
+def edit_todo_action(id):
+  data = request.form
+  res = current_user.update_todo(id, data["text"])
+  if res:
+    flash('Todo Updated!')
+  else:
+    flash('Todo not found or unauthorized')
+  return redirect(url_for('todos_page'))
+
+@app.route('/deleteTodo/<id>', methods=["GET"])
+@jwt_required()
+def delete_todo_action(id):
+  res = current_user.delete_todo(id)
+  if res == None:
+    flash('Invalid id or unauthorized')
+  else:
+    flash('Todo Deleted')
+  return redirect(url_for('todos_page'))
 
 if __name__ == "__main__":
   app.run(host='0.0.0.0', port=81)

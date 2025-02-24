@@ -79,7 +79,7 @@ class User(db.Model):
 
   def set_password(self, password):
     """Create hashed password."""
-    self.password = generate_password_hash(password, method='scrypt')
+    self.password = generate_password_hash(password)
 
   def check_password(self, password):
     """Check hashed password."""
@@ -103,6 +103,9 @@ class RegularUser(User):
   __mapper_args__ = {
       'polymorphic_identity': 'regular user',
   }
+
+  def get_todos(self):
+    return sorted(self.todos, key=lambda todo: todo.id, reverse=True)
 
   def add_todo(self, text):
     new_todo = Todo(text=text)

@@ -47,7 +47,7 @@
            </div>
          </form>
           <ul class="collection " id="result">
-              {% for todo in current_user.todos %}
+              {% for todo in current_user.get_todos() %}
                    <li class="collection-item">
                       <form class="row" method="POST" action="toggle/{{todo.id}}" >
                         <span class="card-title">{{todo.text}}
