@@ -4,7 +4,7 @@ from models import db, Todo, Admin, RegularUser, db, User
 from sqlalchemy.exc import IntegrityError
 from app import app
 
-db.init_app(app)
+
 
 
 @app.cli.command("init", help="Creates and initializes the database")

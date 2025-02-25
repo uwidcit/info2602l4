@@ -29,6 +29,7 @@ def create_app():
   app.config["JWT_COOKIE_SECURE"] = True
   app.config["JWT_SECRET_KEY"] = "super-secret"
   app.config["JWT_COOKIE_CSRF_PROTECT"] = False
+  app.config["JWT_ACCESS_TOKEN_EXPIRES"] = 60 * 60 * 24 * 7  # 1 week
   db.init_app(app)
   app.app_context().push()
   return app
@@ -36,11 +37,6 @@ def create_app():
 
 app = create_app()
 jwt = JWTManager(app)
-
-
-@jwt.user_identity_loader
-def user_identity_lookup(user):
-  return user.id
 
 
 @jwt.user_lookup_loader
@@ -53,33 +49,24 @@ def user_lookup_callback(_jwt_header, jwt_data):
 def custom_unauthorized_response(error):
     return render_template('401.html', error=error), 401
 
-@jwt.expired_token_loader
-def expired_token_callback(jwt_header, jwt_payload):
-    return render_template('401.html'), 401  
-
 # custom decorator authorize routes for admin or regular user
 def login_required(required_class):
-
   def wrapper(f):
-
     @wraps(f)
     @jwt_required()  # Ensure JWT authentication
     def decorated_function(*args, **kwargs):
-      user = required_class.query.filter_by(username=get_jwt_identity()).first()
-      print(user.__class__, required_class, user.__class__ == required_class)
+      user = User.query.get(get_jwt_identity())
       if user.__class__ != required_class:  # Check class equality
         return jsonify(message='Invalid user role'), 403
       return f(*args, **kwargs)
-
     return decorated_function
-
   return wrapper
 
 
 def login_user(username, password):
   user = User.query.filter_by(username=username).first()
   if user and user.check_password(password):
-    token = create_access_token(identity=user)
+    token = create_access_token(identity=user.id)
     return token
   return None
 
