@@ -44,10 +44,13 @@ def user_lookup_callback(_jwt_header, jwt_data):
   identity = jwt_data["sub"]
   return User.query.get(identity)
 
-@jwt.expired_token_loader
 @jwt.invalid_token_loader
 def custom_unauthorized_response(error):
     return render_template('401.html', error=error), 401
+
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return render_template('401.html'), 401  
 
 # custom decorator authorize routes for admin or regular user
 def login_required(required_class):
